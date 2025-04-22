@@ -108,6 +108,11 @@ class WeatherVibesAgent(Agent):
         self.agent_id = agent_id
         logger.info(f"Initialized WeatherVibesAgent with ID: {self.agent_id}")
         
+        # Initialize tool instances directly
+        self.weather_tool = None
+        self.recommendations_tool = None
+        self.youtube_tool = None
+        
         # Register tools
         self._register_tools()
         
@@ -120,25 +125,25 @@ class WeatherVibesAgent(Agent):
         logger.info(f"Tool registry type: {type(self.tool_registry)}")
         
         try:
-            # Create tool instances
-            weather_tool = WeatherTool()
-            recommendations_tool = RecommendationsTool()
-            youtube_tool = YouTubeTool()
+            # Create tool instances and store them directly
+            self.weather_tool = WeatherTool()
+            self.recommendations_tool = RecommendationsTool()
+            self.youtube_tool = YouTubeTool()
             
             # Register tools with metadata and implementation
             self.tool_registry.register(
                 metadata=WeatherTool.metadata(),
-                implementation=weather_tool
+                implementation=self.weather_tool
             )
             
             self.tool_registry.register(
                 metadata=RecommendationsTool.metadata(),
-                implementation=recommendations_tool
+                implementation=self.recommendations_tool
             )
             
             self.tool_registry.register(
                 metadata=YouTubeTool.metadata(),
-                implementation=youtube_tool
+                implementation=self.youtube_tool
             )
             
             logger.info("Tools registered successfully")
@@ -234,9 +239,8 @@ class WeatherVibesAgent(Agent):
             
             # Step 1: Get weather information
             logger.info(f"Getting weather for location: {location}")
-            weather_tool = self.tool_registry.get_tool("get_weather")
-            weather_result = await weather_tool.execute(location=location, units=units)
-            
+
+            weather_result = await self.weather_tool.execute(location=location, units=units)
             if "error" in weather_result:
                 logger.error(f"Weather API error: {weather_result['message']}")
                 return {
@@ -246,16 +250,14 @@ class WeatherVibesAgent(Agent):
             
             # Step 2: Get recommendations
             logger.info(f"Getting recommendations based on weather")
-            recommendations_tool = self.tool_registry.get_tool("get_recommendations")
-            recommendations = await recommendations_tool.execute(
+            recommendations = await self.recommendations_tool.execute(
                 weather=weather_result,
                 max_items=max_recommendations
             )
             
             # Step 3: Get matching YouTube video
             logger.info(f"Finding YouTube video matching weather condition: {weather_result['condition']}")
-            youtube_tool = self.tool_registry.get_tool("find_weather_video")
-            video_result = await youtube_tool.execute(
+            video_result = await self.youtube_tool.execute(
                 weather_condition=weather_result["condition"],
                 mood_override=video_mood
             )
