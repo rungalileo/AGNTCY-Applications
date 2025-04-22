@@ -10,39 +10,17 @@ from jinja2 import Environment, FileSystemLoader
 
 from agent_framework.agent import Agent
 from agent_framework.state import AgentState
+from agent_framework.models import ToolMetadata
 from openai import OpenAI
 # Remove AgentLogger import since it's now abstract
 # from agent_framework.utils.logging import AgentLogger
 
 # Use absolute imports instead of relative imports
-# Replace: from ..tools import WeatherTool, RecommendationsTool, YouTubeTool
-try:
-    # Try direct import first
-    from weather_vibes.tools.weather_tool import WeatherTool
-    from weather_vibes.tools.recommendations_tool import RecommendationsTool
-    from weather_vibes.tools.youtube_tool import YouTubeTool
-except ImportError:
-    try:
-        # Try with tutorials prefix
-        from tutorials.weather_vibes_agent.weather_vibes.tools.weather_tool import WeatherTool
-        from tutorials.weather_vibes_agent.weather_vibes.tools.recommendations_tool import RecommendationsTool
-        from tutorials.weather_vibes_agent.weather_vibes.tools.youtube_tool import YouTubeTool
-    except ImportError:
-        # Final fallback - try relative import as a last resort
-        try:
-            from ..tools.weather_tool import WeatherTool
-            from ..tools.recommendations_tool import RecommendationsTool
-            from ..tools.youtube_tool import YouTubeTool
-        except ImportError:
-            # Directly import from the current directory structure
-            import sys
-            import os.path
-            sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-            from tools.weather_tool import WeatherTool
-            from tools.recommendations_tool import RecommendationsTool
-            from tools.youtube_tool import YouTubeTool
+from weather_vibes.tools.weather_tool import WeatherTool
+from weather_vibes.tools.recommendation_tool import RecommendationsTool
+from weather_vibes.tools.youtube_tool import YouTubeTool
 
-from .descriptor import WEATHER_VIBES_DESCRIPTOR
+from weather_vibes.agent.descriptor import WEATHER_VIBES_DESCRIPTOR
 
 # Configure standard logging
 logger = logging.getLogger("weather_vibes_agent")
@@ -52,11 +30,21 @@ logger = logging.getLogger("weather_vibes_agent")
 def create_tool_metadata(name, description, tags=None):
     @classmethod
     def metadata(cls):
-        return {
-            "name": name, 
-            "description": description,
-            "tags": tags or []
-        }
+        return ToolMetadata(
+            name=name, 
+            description=description,
+            tags=tags or [],
+            input_schema={
+                "type": "object",
+                "properties": {},
+                "required": []
+            },
+            output_schema={
+                "type": "object",
+                "properties": {},
+                "required": []
+            }
+        )
     return metadata
 
 # Add metadata method to the tool classes if they don't have it
@@ -127,95 +115,30 @@ class WeatherVibesAgent(Agent):
         # First, inspect what type of object tool_registry is
         logger.info(f"Tool registry type: {type(self.tool_registry)}")
         
-        # Let's try multiple different approaches
         try:
             # Create tool instances
             weather_tool = WeatherTool()
             recommendations_tool = RecommendationsTool()
             youtube_tool = YouTubeTool()
             
-            # Try to figure out what the registry is and how to use it
-            if hasattr(self.tool_registry, 'register'):
-                # Approach 1: Check if register is a method that takes tool instances
-                try:
-                    logger.info("Trying direct tool registration with single argument")
-                    # Try calling with a single argument
-                    self.tool_registry.register(weather_tool)
-                    self.tool_registry.register(recommendations_tool)
-                    self.tool_registry.register(youtube_tool)
-                    logger.info("Direct tool registration successful")
-                    return
-                except Exception as e:
-                    logger.warning(f"Direct tool registration failed: {e}")
-                
-                # Approach 2: Try with keyword arguments
-                try:
-                    logger.info("Trying registration with keyword arguments")
-                    self.tool_registry.register(tool=weather_tool)
-                    self.tool_registry.register(tool=recommendations_tool)
-                    self.tool_registry.register(tool=youtube_tool)
-                    logger.info("Keyword tool registration successful")
-                    return
-                except Exception as e:
-                    logger.warning(f"Keyword tool registration failed: {e}")
-                    
-                # Approach 3: Check if it's a dictionary-like registration
-                try:
-                    logger.info("Trying dictionary-style registration")
-                    self.tool_registry.register({"get_weather": weather_tool})
-                    self.tool_registry.register({"get_recommendations": recommendations_tool})
-                    self.tool_registry.register({"find_weather_video": youtube_tool})
-                    logger.info("Dictionary-style registration successful")
-                    return
-                except Exception as e:
-                    logger.warning(f"Dictionary-style registration failed: {e}")
-
-                # Approach 4: Check if the register method is actually a property to set
-                try:
-                    logger.info("Trying to treat register as a property")
-                    # Try setting tools directly into the registry
-                    setattr(self.tool_registry, "get_weather", weather_tool)
-                    setattr(self.tool_registry, "get_recommendations", recommendations_tool)  
-                    setattr(self.tool_registry, "find_weather_video", youtube_tool)
-                    logger.info("Direct property setting successful")
-                    return
-                except Exception as e:
-                    logger.warning(f"Property setting failed: {e}")
-                    
-            # Approach 5: Check if the tool_registry is a dictionary itself
-            if hasattr(self.tool_registry, '__setitem__'):
-                try:
-                    logger.info("Treating tool_registry as a dictionary")
-                    self.tool_registry["get_weather"] = weather_tool
-                    self.tool_registry["get_recommendations"] = recommendations_tool
-                    self.tool_registry["find_weather_video"] = youtube_tool
-                    logger.info("Dictionary assignment successful")
-                    return
-                except Exception as e:
-                    logger.warning(f"Dictionary assignment failed: {e}")
-                    
-            # Approach 6: Desperate attempt - try monkey patching the tool registry
-            try:
-                logger.info("Attempting to monkey patch the tool registry")
-                # Create a simple in-memory tool lookup
-                tool_lookup = {
-                    "get_weather": weather_tool,
-                    "get_recommendations": recommendations_tool,
-                    "find_weather_video": youtube_tool
-                }
-                
-                # Override the get_tool method
-                def get_tool_override(name):
-                    return tool_lookup.get(name)
-                
-                # Try to replace the method
-                self.tool_registry.get_tool = get_tool_override
-                logger.info("Monkey patching successful")
-                return
-            except Exception as e:
-                logger.error(f"All tool registration approaches failed: {e}")
-                raise ValueError(f"Unable to register tools. Tool registry type: {type(self.tool_registry)}")
-        
+            # Register tools with metadata and implementation
+            self.tool_registry.register(
+                metadata=WeatherTool.metadata(),
+                implementation=weather_tool
+            )
+            
+            self.tool_registry.register(
+                metadata=RecommendationsTool.metadata(),
+                implementation=recommendations_tool
+            )
+            
+            self.tool_registry.register(
+                metadata=YouTubeTool.metadata(),
+                implementation=youtube_tool
+            )
+            
+            logger.info("Tools registered successfully")
+            
         except Exception as e:
             logger.error(f"Failed to register tools: {e}")
             raise

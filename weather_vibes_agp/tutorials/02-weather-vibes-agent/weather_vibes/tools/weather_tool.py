@@ -20,7 +20,7 @@ class WeatherTool(BaseTool):
     input_schema = WeatherInput.model_json_schema()
     
     def __init__(self):
-        self.api_key = os.getenv("OPENWEATHERMAP_API_KEY")
+        self.api_key = os.getenv("OPENWEATHER_API_KEY")
         if not self.api_key:
             raise ValueError("OpenWeatherMap API key not found in environment")
         self.base_url = "http://api.openweathermap.org/data/2.5/weather"

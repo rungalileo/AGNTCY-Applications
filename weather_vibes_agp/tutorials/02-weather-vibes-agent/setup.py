@@ -15,4 +15,14 @@ setup(
         "requests==2.31.0",
         "google-api-python-client==2.111.0",
     ],
+    extras_require={
+        "dev": [
+            "pytest",
+            "black",
+            "isort",
+            "flake8",
+            "mypy",
+        ],
+    },
+    python_requires=">=3.8",
 ) 

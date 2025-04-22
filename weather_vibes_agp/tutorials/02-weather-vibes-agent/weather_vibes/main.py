@@ -3,6 +3,14 @@ Weather Vibes ACP Server
 Implements the Agent Connect Protocol (ACP) to serve the Weather Vibes agent.
 """
 import os
+import sys
+from pathlib import Path
+
+# Add the project root to the Python path
+project_root = str(Path(__file__).parent.parent)
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
 import json
 import logging
 import asyncio
@@ -11,17 +19,16 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 
-from agent.weather_vibes_agent import WeatherVibesAgent
+from weather_vibes.agent.weather_vibes_agent import WeatherVibesAgent
 
 # Load environment variables
 load_dotenv()
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-)
+# log to confirm variables are loaded
 logger = logging.getLogger("weather_vibes_server")
+logger.info("Environment variables:")
+logger.info(f"OPENAI_API_KEY exists: {'OPENAI_API_KEY' in os.environ}")
+logger.info(f"OPENWEATHER_API_KEY exists: {'OPENWEATHER_API_KEY' in os.environ}")
 
 # Initialize FastAPI app
 app = FastAPI(title="Weather Vibes ACP Server")
