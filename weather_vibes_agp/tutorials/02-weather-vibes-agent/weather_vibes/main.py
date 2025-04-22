@@ -2,6 +2,7 @@
 Weather Vibes ACP Server
 This module implements the server for the Weather Vibes agent, following the Agent Connect Protocol (ACP).
 """
+import asyncio
 import sys
 import os
 import logging
