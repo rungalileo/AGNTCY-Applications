@@ -6,19 +6,14 @@ import os
 import json
 import logging
 import asyncio
-import sys
 from typing import Dict, Any
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 
-# Adjust Python path to find modules more reliably
-current_dir = os.path.dirname(os.path.abspath(__file__))
-parent_dir = os.path.dirname(current_dir)
-if parent_dir not in sys.path:
-    sys.path.append(parent_dir)
+from agent.weather_vibes_agent import WeatherVibesAgent
 
-# Load environment variables first so API keys are available
+# Load environment variables
 load_dotenv()
 
 # Configure logging
@@ -28,60 +23,11 @@ logging.basicConfig(
 )
 logger = logging.getLogger("weather_vibes_server")
 
-try:
-    # First try direct local import
-    logger.info("Attempting to import WeatherVibesAgent...")
-    try:
-        from agent.weather_vibes_agent import WeatherVibesAgent
-        logger.info("Successfully imported from agent.weather_vibes_agent")
-    except ImportError as e:
-        logger.warning(f"First import attempt failed: {e}")
-        # Try with package prefix
-        try:
-            from weather_vibes.agent.weather_vibes_agent import WeatherVibesAgent
-            logger.info("Successfully imported from weather_vibes.agent.weather_vibes_agent")
-        except ImportError as e:
-            logger.warning(f"Second import attempt failed: {e}")
-            # Try with full path
-            try:
-                from testing.weather_vibes_agent.weather_vibes.agent.weather_vibes_agent import WeatherVibesAgent
-                logger.info("Successfully imported from testing.weather_vibes_agent.weather_vibes.agent.weather_vibes_agent")
-            except ImportError as e:
-                logger.warning(f"Third import attempt failed: {e}")
-                # Direct manual import as a last resort
-                logger.info("Attempting direct manual import...")
-                import sys
-                import importlib.util
-                
-                agent_path = os.path.join(current_dir, "agent", "weather_vibes_agent.py")
-                if not os.path.exists(agent_path):
-                    logger.error(f"Could not find agent file at {agent_path}")
-                    agent_path = os.path.join(parent_dir, "weather_vibes", "agent", "weather_vibes_agent.py")
-                    if not os.path.exists(agent_path):
-                        raise FileNotFoundError(f"Could not find agent file at {agent_path}")
-                
-                logger.info(f"Loading module from {agent_path}")
-                spec = importlib.util.spec_from_file_location("weather_vibes_agent", agent_path)
-                weather_vibes_agent_module = importlib.util.module_from_spec(spec)
-                sys.modules["weather_vibes_agent"] = weather_vibes_agent_module
-                spec.loader.exec_module(weather_vibes_agent_module)
-                WeatherVibesAgent = weather_vibes_agent_module.WeatherVibesAgent
-                logger.info("Successfully imported using direct file loading")
-except Exception as e:
-    logger.error(f"Failed to import WeatherVibesAgent: {e}")
-    raise
-
 # Initialize FastAPI app
 app = FastAPI(title="Weather Vibes ACP Server")
 
 # Initialize Weather Vibes Agent
-try:
-    logger.info("Initializing Weather Vibes Agent...")
-    weather_vibes_agent = WeatherVibesAgent(agent_id="weather_vibes")
-    logger.info("Agent initialized successfully")
-except Exception as e:
-    logger.error(f"Error initializing agent: {e}")
-    raise
+weather_vibes_agent = WeatherVibesAgent(agent_id="weather_vibes")
 
 # ACP API Endpoints
 
@@ -251,12 +197,6 @@ if __name__ == "__main__":
     
     host = os.getenv("SERVER_HOST", "0.0.0.0")
     port = int(os.getenv("SERVER_PORT", "8000"))
-    
-    # Print startup information
-    logger.info(f"Starting Weather Vibes ACP Server on {host}:{port}")
-    logger.info(f"OpenAI API Key configured: {'Yes' if os.getenv('OPENAI_API_KEY') else 'No - Please set OPENAI_API_KEY'}")
-    logger.info(f"OpenWeatherMap API Key configured: {'Yes' if os.getenv('OPENWEATHERMAP_API_KEY') else 'No - Please set OPENWEATHERMAP_API_KEY'}")
-    logger.info(f"YouTube API Key configured: {'Yes' if os.getenv('YOUTUBE_API_KEY') else 'No - Please set YOUTUBE_API_KEY'}")
     
     # Run the server
     uvicorn.run("main:app", host=host, port=port, reload=True)

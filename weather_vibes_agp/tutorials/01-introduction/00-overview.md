@@ -40,21 +40,7 @@ Dive into building server-side agents:
 - Processing requests from clients
 - Customizing agent behavior
 
-### [4. Advanced Agent Patterns](04-advanced-patterns.md) (Coming Soon)
 
-Explore advanced patterns for agent interactions:
-- Tool-using agents
-- Multi-agent systems
-- Streaming responses
-- State management
-
-### [5. Deploying AGP Applications](05-deployment.md) (Coming Soon)
-
-Learn how to deploy AGP applications to production:
-- Containerization with Docker
-- Security considerations
-- Scaling strategies
-- Monitoring and observability
 
 ## Relationship to Agent Connect Protocol (ACP)
 
@@ -79,7 +65,6 @@ If you encounter issues while working through these tutorials:
 
 1. Check the [Troubleshooting](#troubleshooting) sections in each tutorial
 2. Refer to the complete examples in the repository
-3. Join our community Discord for support
 
 ## Next Steps
 
