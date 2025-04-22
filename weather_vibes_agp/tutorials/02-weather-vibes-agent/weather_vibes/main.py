@@ -1,28 +1,27 @@
 """
 Weather Vibes ACP Server
-Implements the Agent Connect Protocol (ACP) to serve the Weather Vibes agent.
+This module implements the server for the Weather Vibes agent, following the Agent Connect Protocol (ACP).
 """
-import os
 import sys
-from pathlib import Path
-
-# Add the project root to the Python path
-project_root = str(Path(__file__).parent.parent)
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
-
-import json
+import os
 import logging
-import asyncio
-from typing import Dict, Any
+from pathlib import Path
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from typing import Dict, Any, List, Optional
 
-from weather_vibes.agent.weather_vibes_agent import WeatherVibesAgent
+# Add the project root to Python path to help with imports
+project_root = Path(__file__).parent.parent
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
 
 # Load environment variables
 load_dotenv()
+
+# Local imports
+from weather_vibes.agent.weather_vibes_agent import WeatherVibesAgent
 
 # log to confirm variables are loaded
 logger = logging.getLogger("weather_vibes_server")

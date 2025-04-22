@@ -4,6 +4,7 @@ Weather Vibes Agent implementation using the Simple Agent Framework.
 import os
 import json
 import logging
+import sys
 from pathlib import Path
 from typing import Dict, Any, List, Optional
 from jinja2 import Environment, FileSystemLoader
@@ -12,14 +13,17 @@ from agent_framework.agent import Agent
 from agent_framework.state import AgentState
 from agent_framework.models import ToolMetadata
 from openai import OpenAI
-# Remove AgentLogger import since it's now abstract
-# from agent_framework.utils.logging import AgentLogger
 
-# Use absolute imports instead of relative imports
+
+# Configure proper path for imports
+current_dir = Path(__file__).resolve().parent
+project_root = current_dir.parent.parent  
+sys.path.insert(0, str(project_root))
+
+# import tools 
 from weather_vibes.tools.weather_tool import WeatherTool
 from weather_vibes.tools.recommendation_tool import RecommendationsTool
 from weather_vibes.tools.youtube_tool import YouTubeTool
-
 from weather_vibes.agent.descriptor import WEATHER_VIBES_DESCRIPTOR
 
 # Configure standard logging
