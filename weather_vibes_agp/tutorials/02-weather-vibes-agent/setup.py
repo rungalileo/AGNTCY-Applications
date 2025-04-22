@@ -12,7 +12,7 @@ setup(
         "pydantic",
         "rich>=13.0.0",
         "openai>=1.0.0",
-        "requests==2.31.0",
+        "requests==2.32.2",
         "google-api-python-client==2.111.0",
     ],
 ) 
