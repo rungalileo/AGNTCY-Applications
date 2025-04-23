@@ -1,0 +1,13 @@
+# Galileo requirements for agent evaluation
+galileo-sdk>=0.5.0
+python-dotenv==1.0.0
+
+# Base requirements (already in the main requirements.txt)
+# Uncomment if needed
+# pydantic
+# fastapi
+# uvicorn
+# jinja2
+# openai
+# requests
+# google-api-python-client 

@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 """
-Script to run the WeatherVibesAgent with a sample request.
-This demonstrates how to call the agent directly.
+Galileo-instrumented version of the Weather Vibes Agent.
+Adds tracing and logging for performance evaluation and debugging.
 
 Usage:
-    python run_agent.py [location]
-    python run_agent.py -l "New York" -u imperial -m relaxing
+    python galileo_agent.py [location]
+    python galileo_agent.py -l "Tokyo" -u imperial -m relaxing
 """
 import asyncio
 import argparse
@@ -14,43 +14,55 @@ import os
 import sys
 from pathlib import Path
 from dotenv import load_dotenv
+from galileo import log, galileo_context
 
 # Load environment variables & set up path
 load_dotenv()
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 # Quick environment check
-required_keys = ["OPENAI_API_KEY", "OPENWEATHER_API_KEY", "YOUTUBE_API_KEY"]
+required_keys = ["OPENAI_API_KEY", "OPENWEATHER_API_KEY", "YOUTUBE_API_KEY", "GALILEO_API_KEY"]
 if any(not os.getenv(key) for key in required_keys):
     missing = [key for key in required_keys if not os.getenv(key)]
     print(f"Missing API keys: {', '.join(missing)}")
     print("Add them to your .env file or environment variables")
     sys.exit(1)
 
+# Check for Galileo log stream
+galileo_log_stream = os.getenv("GALILEO_LOG_STREAM")
+if not galileo_log_stream:
+    print("Warning: GALILEO_LOG_STREAM environment variable not set.")
+    print("Using default log stream name.")
+    galileo_log_stream = "weather_vibes_agent"
+
 # Import the agent
 from weather_vibes.agent.weather_vibes_agent import WeatherVibesAgent
 
-# Tool wrapper functions
+# Tool wrappers with Galileo instrumentation
+@log(span_type="tool", name="weather_tool")
 async def get_weather(weather_tool, location, units="metric"):
-    """Get weather data"""
+    """Get weather data with Galileo tracing"""
     result = await weather_tool.execute(location=location, units=units)
     return result
 
+@log(span_type="tool", name="recommendations_tool")
 async def get_recommendations(recommendations_tool, weather, max_items=5):
-    """Get recommendations"""
+    """Get recommendations with Galileo tracing"""
     result = await recommendations_tool.execute(weather=weather, max_items=max_items)
     return result
 
+@log(span_type="tool", name="youtube_tool")
 async def find_weather_video(youtube_tool, weather_condition, mood_override=None):
-    """Find YouTube videos"""
+    """Find YouTube videos with Galileo tracing"""
     result = await youtube_tool.execute(
         weather_condition=weather_condition,
         mood_override=mood_override
     )
     return result
 
+@log(span_type="workflow", name="weather_vibes_workflow")
 async def process_request(agent, request):
-    """Main workflow"""
+    """Main workflow with Galileo tracing"""
     try:
         # Extract request data
         input_data = request.get("input", {})
@@ -119,10 +131,11 @@ async def process_request(agent, request):
     except Exception as e:
         return {"error": 500, "message": f"Error: {str(e)}"}
 
-# Function to run the agent with inputs
+# Simple wrapper for logging the inputs
+@log(span_type="entrypoint", name="weather_vibes_agent")
 async def run_agent_with_inputs(location, units, mood, recommendations, verbose):
-    """Run the agent with specific inputs"""
-    print(f"Getting weather for: {location}")
+    """Run the agent with specific inputs logged via the decorator"""
+    print(f"Getting weather for: {location} (with Galileo tracing)")
     
     # Create agent and request
     agent = WeatherVibesAgent()
@@ -135,7 +148,8 @@ async def run_agent_with_inputs(location, units, mood, recommendations, verbose)
         },
         "metadata": {
             "user_id": "demo_user", 
-            "session_id": "demo_session"
+            "session_id": "demo_session",
+            "galileo_instrumented": True
         }
     }
     
@@ -178,16 +192,20 @@ async def run_agent_with_inputs(location, units, mood, recommendations, verbose)
             print(f"• {video['title']}")
             print(f"• By: {video['channel']}")
             print(f"• URL: {video['url']}")
+        
+        print("\n📊 Galileo traces have been collected for this run")
+        print("View them in your Galileo dashboard")
     
     except Exception as e:
         print(f"Error: {e}")
         import traceback
         traceback.print_exc()
 
+# Entry point function
 async def main():
-    """Main entry point"""
+    """Main entry point that uses galileo_context to set up the trace environment"""
     # Parse arguments
-    parser = argparse.ArgumentParser(description="Run the Weather Vibes Agent")
+    parser = argparse.ArgumentParser(description="Run the Galileo-instrumented Weather Vibes Agent")
     parser.add_argument("location", nargs="?", help="Location (e.g., 'Tokyo')")
     parser.add_argument("-l", "--location", dest="location_alt", help="Alternative location specification")
     parser.add_argument("-u", "--units", choices=["metric", "imperial"], default="metric", help="Units (metric/imperial)")
@@ -201,14 +219,25 @@ async def main():
     if not location:
         location = input("Enter location (default: New York): ") or "New York"
     
-    # Run the agent with the provided inputs
-    await run_agent_with_inputs(
-        location=location,
-        units=args.units,
-        mood=args.mood,
-        recommendations=args.recommendations,
-        verbose=args.verbose
-    )
+    # Use galileo_context with the log stream from environment
+    with galileo_context(log_stream=galileo_log_stream):
+        # Create a dictionary of inputs as metadata
+        input_data = {
+            "location": location,
+            "units": args.units,
+            "mood": args.mood,
+            "recommendations": args.recommendations,
+            "verbose": args.verbose
+        }
+        
+        # Run the agent with the wrapped function to log inputs
+        await run_agent_with_inputs(
+            location=location,
+            units=args.units,
+            mood=args.mood,
+            recommendations=args.recommendations,
+            verbose=args.verbose
+        )
 
 if __name__ == "__main__":
     asyncio.run(main()) 
