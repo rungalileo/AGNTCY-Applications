@@ -1,0 +1,101 @@
+# Using Galileo with Weather Vibes Agent
+
+This document explains how to use Galileo for evaluating and monitoring the Weather Vibes agent.
+
+## What is Galileo?
+
+[Galileo](https://www.rungalileo.io/) is an AI observability and evaluation platform that helps you:
+
+- Track agent behavior
+- Collect and analyze traces
+- Evaluate agent performance
+- Identify areas for improvement
+- Monitor production deployments
+
+## Setup
+
+### 1. Install Galileo SDK
+
+```bash
+pip install -r requirements-galileo.txt
+```
+
+### 2. Configure Galileo API Key
+
+Create or edit your `.env` file and add your Galileo API key:
+
+```
+GALILEO_API_KEY=your_galileo_api_key_here
+```
+
+You can get your API key from the Galileo dashboard.
+
+## Running the Galileo-Instrumented Agent
+
+Run the agent with Galileo instrumentation:
+
+```bash
+python galileo_agent.py "San Francisco"
+```
+
+You can use all the same command-line arguments as the regular agent:
+
+```bash
+python galileo_agent.py --location "Tokyo" --units imperial --mood relaxing --verbose
+```
+
+## Understanding the Spans
+
+The Galileo-instrumented version of the agent includes several span types:
+
+1. **Entrypoint Span** (`entrypoint`): 
+   - Captures the entire application run
+   - Tracks overall execution time and high-level metrics
+
+2. **Workflow Span** (`workflow`):
+   - Captures the main agent workflow in `process_request`
+   - Shows how the agent processes the request end-to-end
+
+3. **Tool Spans** (`tool`):
+   - Individual tool executions:
+     - `weather_tool`: OpenWeatherMap API call
+     - `recommendations_tool`: Weather-based recommendations generation
+     - `youtube_tool`: YouTube video search
+
+## Viewing Traces in Galileo
+
+After running the agent, you can view the traces in the Galileo dashboard. The traces will show:
+
+- Request and response data for each span
+- Execution time for each component
+- Hierarchical view of the agent's workflow
+- Input/output data flow between components
+
+## Customizing Instrumentation
+
+You can add more spans or customize existing ones by modifying `galileo_agent.py`:
+
+1. **Adding LLM spans**: If you implement LLM-based tools, use `@log(span_type="llm")` decorators
+2. **Adding retrieval spans**: For document retrieval functions, use `@log(span_type="retriever")` decorators
+3. **Custom span names**: Modify the `name` parameter in decorators for better organization
+
+## Using Galileo for Evaluation
+
+You can use Galileo's evaluation features to:
+
+1. **Create eval datasets**: Build a set of test inputs for your agent
+2. **Define metrics**: Set up metrics to measure agent performance
+3. **Run evaluations**: Test your agent against the datasets
+4. **Analyze results**: Identify strengths and weaknesses
+5. **Improve the agent**: Make targeted improvements based on insights
+
+## Troubleshooting
+
+If you encounter issues with Galileo:
+
+- Check that your API key is correctly set in the environment
+- Ensure the Galileo SDK is properly installed
+- Verify that your spans are correctly configured
+- Check the Galileo documentation for more information
+
+For more information, visit the [Galileo documentation](https://docs.rungalileo.io/). 

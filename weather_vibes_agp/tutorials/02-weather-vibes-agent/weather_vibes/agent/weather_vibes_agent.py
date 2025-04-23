@@ -30,7 +30,6 @@ from weather_vibes.agent.descriptor import WEATHER_VIBES_DESCRIPTOR
 logger = logging.getLogger("weather_vibes_agent")
 
 # Add metadata class methods to tools to match the updated API
-# These are manually added here since we can't modify the original tool classes
 def create_tool_metadata(name, description, tags=None):
     @classmethod
     def metadata(cls):
