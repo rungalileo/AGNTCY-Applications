@@ -6,7 +6,7 @@ from __future__ import annotations
 import asyncio
 import logging
 
-from dotenv import load_dotenv
+from dotenv import load_dotenv, find_dotenv
 
 from agp_api.gateway.gateway_container import GatewayContainer
 from agp_api.agent.agent_container import AgentContainer
@@ -70,5 +70,8 @@ async def main() -> None:
 
 
 if __name__ == "__main__":
-    load_dotenv(override=True)
+    # 1) load global/shared first
+    load_dotenv(os.path.expanduser("~/.config/secrets/myapps.env"), override=False)
+    # 2) then load per-app .env (if present) to override selectively
+    load_dotenv(find_dotenv(usecwd=True), override=True)
     asyncio.run(main())

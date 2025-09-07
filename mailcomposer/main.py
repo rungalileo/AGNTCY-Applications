@@ -4,7 +4,12 @@ import json
 
 from dotenv import load_dotenv, find_dotenv
 
-load_dotenv(dotenv_path=find_dotenv(usecwd=True))
+# 1) load global/shared .env first
+load_dotenv(os.path.expanduser("~/.config/secrets/myapps.env"), override=False)
+# 2) then load per-app .env (if present) to override selectively
+load_dotenv(find_dotenv(usecwd=True), override=True)
+
+
 from mailcomposer.mailcomposer import graph, AgentState, OutputState
 from mailcomposer.state import Message, Type as MsgType
 

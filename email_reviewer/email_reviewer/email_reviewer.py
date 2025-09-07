@@ -3,7 +3,7 @@
 import asyncio
 from typing import Any, Optional
 from pydantic import BaseModel, Field
-from dotenv import load_dotenv
+from dotenv import load_dotenv, find_dotenv
 from llama_index.core.agent.react import ReActChatFormatter, ReActOutputParser
 from .state import EmailReviewerInput, EmailReview, ConfigSchema
 
@@ -21,7 +21,10 @@ from llama_index.core.workflow import (
 from llama_index.core.prompts import ChatPromptTemplate
 from llama_index.llms.azure_openai import AzureOpenAI
 
-load_dotenv()
+# 1) load global/shared first
+load_dotenv(os.path.expanduser("~/.config/secrets/myapps.env"), override=False)
+# 2) then load per-app .env (if present) to override selectively
+load_dotenv(find_dotenv(usecwd=True), override=True)
 
 class LogEvent(Event):
     msg: str

@@ -44,6 +44,9 @@ SERVER_PORT=8000
 SERVER_HOST=0.0.0.0
 ```
 
+Note that we have the option to access a shared `.env` file at the path `~/.config/secrets/myapps.env`. This will be loaded first, and then any variables stored in our local project `.env` will overwrite the globals.
+
+
 Once you've added the above files, you can add the following to your `.gitignore` file to avoid committing the `.env` file to the repository:
 
 ```

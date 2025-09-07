@@ -14,7 +14,7 @@ client <-----> Gateway <----> Server
 
 - Python 3.12+
 - A virtual environment is recommended for isolating dependencies.
-- a `.env` at the proejct root with your OpenAI API key
+- a `.env` at the proejct root with your OpenAI API key (or a global env file with the same located at `~/.config/secrets/myapps.env`)
 
 ## Installation
 
