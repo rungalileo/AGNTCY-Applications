@@ -11,7 +11,7 @@ from langsmith import traceable
 from langsmith.run_helpers import get_current_run_tree
 from agp_api.gateway.gateway_container import GatewayContainer
 from agp_api.agent.agent_container import AgentContainer
-from dotenv import load_dotenv
+from dotenv import load_dotenv, find_dotenv
 from langchain_core.messages import BaseMessage, HumanMessage
 from langchain_core.messages.utils import convert_to_openai_messages
 from langgraph.graph import END, START, StateGraph
@@ -207,5 +207,8 @@ async def main():
 
 # Main execution
 if __name__ == "__main__":
-    load_dotenv(override=True)
+    # 1) load global/shared first
+    load_dotenv(os.path.expanduser("~/.config/secrets/myapps.env"), override=False)
+    # 2) then load per-app .env (if present) to override selectively
+    load_dotenv(find_dotenv(usecwd=True), override=True)
     asyncio.run(main())
